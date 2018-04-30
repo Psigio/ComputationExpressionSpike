@@ -57,8 +57,10 @@ module WebReqModule =
                         let bytes = Encoding.UTF8.GetBytes(rawString)
                         target.Write(bytes, 0, bytes.Length)
                     use ms = new MemoryStream()
+                    // Reverse parameters so they are written out in the same order that they were added
+                    let reversedList = List.rev ctx.parameters
                     // Write out parameters
-                    for p in ctx.parameters do
+                    for p in reversedList do
                         let raw = generateContent p.key p.value
                         writeToStream ms raw
                     // And footer
@@ -71,7 +73,7 @@ module WebReqModule =
 
     let webreq = WebReqBuilder()
 
-    let testIt =
+    let buildRequest =
         let reqGuid = Guid.NewGuid()
         let test = webreq {
             guid reqGuid
@@ -81,15 +83,16 @@ module WebReqModule =
         }
         match test with 
             | StreamData s ->
-                printfn "Generated data %A" s
-            | _ -> failwith "Not generated"
-        ()
+               s
+            | _ -> failwith "Not generated"        
 
 
 [<EntryPoint>]
 let main _ =
     try
-        WebReqModule.testIt
+        let data = WebReqModule.buildRequest
+        // For test purposes print out the string contained in the array
+        printfn "%s" (Encoding.UTF8.GetString(data))
         0 // return an integer exit code
     with
     | ex -> 
